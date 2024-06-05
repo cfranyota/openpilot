@@ -25,8 +25,12 @@ from openpilot.common.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
-A_CRUISE_MAX_VALS = [3.5, 3.5, 3.3, 2.8, 1.5, 1.0, 0.75, 0.65, 0.6]
+
+A_CRUISE_MIN_BP =   [0., 8., 16., 28., 42.]
 A_CRUISE_MAX_BP = [0.,   3.,   6.,   8.,  11.,  15.,  20.,  25.,  40.]
+
+A_CRUISE_MIN_VALS = [-0.50, -0.52, -0.55, -0.57, -0.60]
+A_CRUISE_MAX_VALS = [3.5, 3.5, 3.3, 2.8, 1.5, 1.0, 0.75, 0.65, 0.6]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -38,6 +42,9 @@ EventName = car.CarEvent.EventName
 
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
+
+def get_min_accel(v_ego):
+  return interp(v_ego, A_CRUISE_MIN_BP, A_CRUISE_MIN_VALS)
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -126,10 +133,10 @@ class LongitudinalPlanner:
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if self.mpc.mode == 'acc':
-      accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
+      accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
-      accel_limits = [ACCEL_MIN, ACCEL_MAX]
+      accel_limits = [get_min_accel(v_ego), get_max_accel(v_ego)]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
 
     if reset_state:
